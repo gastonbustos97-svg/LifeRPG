@@ -10,6 +10,7 @@
 <title>RPG Vida Real ⚔️</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════
    RESET & ROOT
@@ -615,7 +616,110 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
 .diff-ban{background:linear-gradient(135deg,var(--ruby),#5a0f0f);border:1.5px solid #d4a0a0;border-radius:11px;padding:10px 13px;margin-bottom:13px;display:flex;align-items:center;gap:10px;}
 .diff-ban-ico{font-size:22px;}
 .diff-ban-title{font-family:'Cinzel',serif;color:var(--gold-light);font-size:11px;font-weight:700;letter-spacing:1px;}
+
 .diff-ban-sub{color:#d4a0a0;font-size:10px;font-style:italic;margin-top:2px;}
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 — HEATMAP 30 DÍAS
+═══════════════════════════════════════════════════════════ */
+.heatmap-wrap{background:var(--t-card);border:1px solid var(--t-border);border-radius:12px;padding:13px;margin-bottom:9px;overflow:hidden;}
+.heatmap-grid{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;}
+.hm-cell{
+  width:calc((100% - 18px*6)/7 - 3px);/* 7 cols */
+  aspect-ratio:1;border-radius:3px;cursor:default;
+  transition:transform .1s;position:relative;
+}
+.hm-cell:hover{transform:scale(1.25);z-index:2;}
+.hm-empty{background:var(--t-stat);opacity:.35;}
+.hm-0{background:var(--t-stat);opacity:.5;}
+.hm-1{background:#8B1A1A;opacity:.75;}
+.hm-2{background:#C9922A;opacity:.8;}
+.hm-3{background:#4A9E3F;opacity:.85;}
+.hm-full{background:#90f080;box-shadow:0 0 4px #90f08060;}
+.hm-legend{display:flex;align-items:center;gap:6px;margin-top:8px;justify-content:flex-end;}
+.hm-leg-cell{width:11px;height:11px;border-radius:2px;}
+.hm-leg-lbl{font-family:'Cinzel',serif;font-size:7px;color:var(--t-muted);letter-spacing:.5px;}
+.hm-month-row{display:flex;justify-content:space-between;margin-bottom:2px;}
+.hm-month-lbl{font-family:'Cinzel',serif;font-size:7px;color:var(--t-muted);letter-spacing:.5px;}
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 — RADAR CHART
+═══════════════════════════════════════════════════════════ */
+.radar-wrap{background:var(--t-card);border:1px solid var(--t-border);border-radius:12px;padding:13px;margin-bottom:9px;}
+.radar-svg{width:100%;display:block;}
+.radar-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px;justify-content:center;}
+.radar-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t-muted);}
+.radar-leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 — RACHAS POR ATRIBUTO
+═══════════════════════════════════════════════════════════ */
+.attr-streak-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px;}
+.attr-streak-card{
+  background:var(--t-card);border:1px solid var(--t-border);
+  border-radius:12px;padding:12px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  position:relative;overflow:hidden;
+}
+.attr-streak-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--asc,var(--gold));border-radius:12px 12px 0 0;
+}
+.attr-streak-ico{font-size:22px;}
+.attr-streak-val{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--t-txt);line-height:1;}
+.attr-streak-lbl{font-size:9px;color:var(--t-muted);font-style:italic;text-align:center;}
+.attr-streak-best{font-family:'Cinzel',serif;font-size:8px;color:var(--t-sub);letter-spacing:.5px;margin-top:1px;}
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 — BOSS DIARIO
+═══════════════════════════════════════════════════════════ */
+.daily-boss-card{
+  background:linear-gradient(135deg,#0d1020,#101828);
+  border:1.5px solid #3060a0;border-radius:13px;
+  padding:13px;margin-bottom:13px;position:relative;overflow:hidden;
+}
+.daily-boss-card::before{
+  content:'';position:absolute;top:0;left:-100%;width:200%;height:1.5px;
+  background:linear-gradient(90deg,transparent,#5090d0,transparent);
+  animation:dbScan 3.5s linear infinite;
+}
+@keyframes dbScan{to{left:100%;}}
+.daily-boss-card.defeated{background:linear-gradient(135deg,#051810,#0a2818);border-color:#4A9E3F;}
+.dbc-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.dbc-ico{font-size:28px;}
+.dbc-title{font-family:'Cinzel',serif;color:#7090d0;font-size:10px;letter-spacing:1px;font-weight:700;}
+.daily-boss-card.defeated .dbc-title{color:#7fd974;}
+.dbc-name{font-size:12px;color:#a0b8d8;font-style:italic;font-family:'Crimson Pro',serif;margin-top:1px;}
+.daily-boss-card.defeated .dbc-name{color:#90d090;}
+.dbc-desc{font-size:11px;color:#7090a8;font-style:italic;line-height:1.5;margin-bottom:9px;}
+.dbc-btn{
+  width:100%;padding:9px;border:none;border-radius:8px;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;font-weight:700;
+  background:linear-gradient(90deg,#1a3060,#3060a0);color:#b0d0f0;
+  transition:transform .12s;
+}
+.dbc-btn:active{transform:scale(.97);}
+.daily-boss-card.defeated .dbc-btn{background:linear-gradient(90deg,#1a5020,#4A9E3F);color:#d0ffd0;}
+.dbc-xp{font-family:'Cinzel',serif;font-size:8px;color:#5070a0;margin-top:6px;text-align:center;}
+.daily-boss-card.defeated .dbc-xp{color:#70b070;}
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 — EXPORT / IMPORT
+═══════════════════════════════════════════════════════════ */
+.export-btn{
+  width:100%;padding:9px;background:transparent;
+  color:var(--t-txt);font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:1px;border:1px solid var(--t-border);border-radius:8px;
+  cursor:pointer;margin-bottom:8px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.export-btn:active{background:var(--t-stat);}
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 — LOGROS CON PROGRESO
+═══════════════════════════════════════════════════════════ */
+.logro-prog-bar{height:4px;background:var(--t-stat);border-radius:2px;overflow:hidden;margin-top:5px;}
+.logro-prog-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .6s ease;}
+.logro-prog-lbl{font-family:'Cinzel',serif;font-size:7.5px;color:var(--t-sub);letter-spacing:.5px;margin-top:3px;}
 
 /* ═══════════════════════════════════════════════════════════
    SPLASH SCREEN
@@ -856,6 +960,7 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
       </div>
       <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
       <div id="bossContainer"></div>
+      <div id="dailyBossContainer"></div>
       <div id="bonusContainer"></div>
       <div class="sec-t" id="diffLabel">Misiones de hoy</div>
       <div id="questList"></div>
@@ -863,12 +968,23 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
 
     <!-- STATS -->
     <div class="content panel" id="panel-stats">
-      <div class="sec-t">Atributos del Héroe</div>
-      <div class="stat-grid" id="statGrid"></div>
+      <div class="sec-t">Radar de Atributos</div>
+      <div class="radar-wrap">
+        <svg class="radar-svg" id="radarSvg" viewBox="0 0 280 220"></svg>
+        <div class="radar-legend" id="radarLegend"></div>
+      </div>
+      <div class="sec-t">Rachas por Atributo</div>
+      <div class="attr-streak-grid" id="attrStreakGrid"></div>
       <div class="sec-t">Historial 30 días</div>
-      <div class="chart-wrap">
-        <div class="chart-title">MISIONES COMPLETADAS POR DÍA</div>
-        <svg class="chart-svg" id="chartSvg" height="90" viewBox="0 0 360 90"></svg>
+      <div class="heatmap-wrap">
+        <div class="chart-title">ACTIVIDAD DIARIA — ÚLTIMOS 30 DÍAS</div>
+        <div class="hm-legend">
+          <div class="hm-leg-cell hm-0"></div><div class="hm-leg-lbl">Sin misiones</div>
+          <div class="hm-leg-cell hm-1"></div><div class="hm-leg-lbl">&lt;50%</div>
+          <div class="hm-leg-cell hm-2"></div><div class="hm-leg-lbl">50–99%</div>
+          <div class="hm-leg-cell hm-full"></div><div class="hm-leg-lbl">Perfecto</div>
+        </div>
+        <div class="heatmap-grid" id="heatmapGrid"></div>
       </div>
       <div class="sec-t">Resumen</div>
       <div id="statsSummary"></div>
@@ -963,6 +1079,18 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
         <div class="cfg-title">PERSONALIZAR MISIONES</div>
         <div id="editQuestRows"></div>
         <button class="cfg-btn" onclick="saveEdits()">GUARDAR CAMBIOS</button>
+      </div>
+      <div class="cfg-sec">
+        <div class="cfg-title">DATOS DEL HÉROE</div>
+        <div style="font-size:11px;color:var(--t-muted);font-style:italic;margin-bottom:10px;line-height:1.6">Exportá tu progreso para hacer backup o para migrar a otro dispositivo.</div>
+        <button class="export-btn" onclick="exportData()">💾 EXPORTAR PROGRESO (JSON)</button>
+        <button class="export-btn" onclick="document.getElementById('importFile').click()">📂 IMPORTAR PROGRESO</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+      <div class="cfg-sec">
+        <div class="cfg-title">CUENTA Y NUBE ☁️</div>
+        <div style="font-size:11px;color:var(--t-muted);font-style:italic;margin-bottom:10px;line-height:1.6">Tu progreso se guarda automáticamente en la nube. Podés acceder desde cualquier dispositivo.</div>
+        <button class="danger-btn" style="border-color:var(--t-muted);color:var(--t-muted);margin-bottom:0;" onclick="logoutHero()">🚪 CERRAR SESIÓN</button>
       </div>
       <div class="cfg-sec">
         <div class="cfg-title">ZONA DE PELIGRO</div>
@@ -1139,26 +1267,218 @@ function defaultState(){
     bonusQuest:{date:null,questId:null,done:false},
     historyV2:[],earnedLogros:[],
     weekPriorities:[],customQuests:[],
-    notifEnabled:false,notifTime:'20:00'};
+    notifEnabled:false,notifTime:'20:00',
+    dailyBoss:null,dailyBossDefeated:0,bestStreaks:{}};
 }
 
-let state=loadState();
-let selectedClass=null;
+/* ── IndexedDB layer ─────────────────────────────────────── */
+const IDB_NAME    = 'rpg_vida_db';
+const IDB_VERSION = 1;
+const IDB_STORE   = 'rpg_vida';
+const IDB_KEY     = 'state';
 
-function loadState(){
+let _db = null;   // holds the open IDBDatabase instance
+
+function _openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e =>{
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)){
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = e =>{ _db = e.target.result; resolve(_db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function _idbGet(key){
+  return new Promise((resolve, reject)=>{
+    const tx  = _db.transaction(IDB_STORE,'readonly');
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function _idbPut(key, value){
+  return new Promise((resolve, reject)=>{
+    const tx  = _db.transaction(IDB_STORE,'readwrite');
+    const req = tx.objectStore(IDB_STORE).put(value, key);
+    req.onsuccess = ()=> resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function _idbDelete(key){
+  return new Promise((resolve, reject)=>{
+    const tx  = _db.transaction(IDB_STORE,'readwrite');
+    const req = tx.objectStore(IDB_STORE).delete(key);
+    req.onsuccess = ()=> resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/* ── Migration from localStorage ────────────────────────── */
+function _migrateFromLocalStorage(){
+  // Read whichever localStorage version exists (newest first)
+  const keys = ['rpg_vida_v6','rpg_vida_v5','rpg_vida_v4'];
+  for(const k of keys){
+    try{
+      const raw = localStorage.getItem(k);
+      if(!raw) continue;
+      const parsed = JSON.parse(raw);
+      // v5 had no heroClass field
+      if(k === 'rpg_vida_v5') parsed.heroClass = parsed.heroClass || null;
+      const migrated = Object.assign(defaultState(), parsed);
+      console.log(`[RPG] Migrated from ${k} → IndexedDB`);
+      return migrated;
+    } catch(e){ /* corrupt entry, skip */ }
+  }
+  return null;
+}
+
+function _cleanLocalStorage(){
+  ['rpg_vida_v6','rpg_vida_v5','rpg_vida_v4'].forEach(k => localStorage.removeItem(k));
+}
+
+/* ── Supabase config ─────────────────────────────────────── */
+const SUPABASE_URL = 'https://ibsjhepsmlkdiisnuuxg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_bTpJZS7mx_clRiaI4nMUdw_LN9Gyb7v';
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ── Auth & Login Modal ──────────────────────────────────── */
+function showLoginModal(){
+  const overlay=document.createElement('div');
+  overlay.id='loginOverlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+  overlay.innerHTML=`
+    <div style="background:var(--t-modal);border:2px solid var(--gold);border-radius:15px;padding:24px;width:100%;max-width:340px;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:36px;margin-bottom:8px">⚔️</div>
+        <div style="font-family:'Cinzel',serif;color:var(--t-hdr-name);font-size:15px;letter-spacing:1px;">ACCEDER AL REINO</div>
+        <div style="font-size:11px;color:var(--t-muted);margin-top:4px;font-style:italic;">Tus datos del héroe viven en la nube</div>
+      </div>
+      <input id="authEmail" type="email" placeholder="Tu email" autocomplete="email"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--t-border);background:var(--t-inp);color:var(--t-txt);font-family:'Crimson Pro',serif;font-size:15px;margin-bottom:10px;outline:none;">
+      <input id="authPass" type="password" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="current-password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--t-border);background:var(--t-inp);color:var(--t-txt);font-family:'Crimson Pro',serif;font-size:15px;margin-bottom:14px;outline:none;">
+      <button id="loginBtn" onclick="doLogin()"
+        style="width:100%;padding:11px;background:var(--gold);border:none;border-radius:8px;font-family:'Cinzel',serif;font-weight:700;font-size:11px;letter-spacing:1px;cursor:pointer;margin-bottom:8px;color:var(--t-hdr1);">
+        ⚔️ ENTRAR
+      </button>
+      <button id="signupBtn" onclick="doSignup()"
+        style="width:100%;padding:11px;background:transparent;border:1px solid var(--gold);border-radius:8px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;color:var(--gold);cursor:pointer;">
+        CREAR CUENTA NUEVA
+      </button>
+      <p id="authMsg" style="font-size:11px;text-align:center;margin-top:10px;line-height:1.6;color:var(--ruby);min-height:16px;"></p>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('authEmail').focus(),100);
+}
+
+function _setAuthMsg(msg,ok=false){
+  const el=document.getElementById('authMsg');
+  if(el){el.textContent=msg;el.style.color=ok?'var(--xp-green)':'var(--ruby)';}
+}
+function _setAuthBusy(busy){
+  const lb=document.getElementById('loginBtn');
+  const sb=document.getElementById('signupBtn');
+  if(lb)lb.disabled=busy;
+  if(sb)sb.disabled=busy;
+}
+
+async function doLogin(){
+  const email=document.getElementById('authEmail').value.trim();
+  const pass=document.getElementById('authPass').value;
+  if(!email||!pass){_setAuthMsg('Completá el email y la contraseña.');return;}
+  _setAuthBusy(true);_setAuthMsg('Entrando al reino...',true);
+  const {error}=await _sb.auth.signInWithPassword({email,password:pass});
+  if(error){_setAuthBusy(false);_setAuthMsg('Error: '+error.message);return;}
+  document.getElementById('loginOverlay')?.remove();
+  await loadStateFromCloud();
+  applyTheme(state.theme||'parchment');
+  addAutoTheme();
+  render();
+  if(!state.heroClass)setTimeout(()=>showClassSelect(false),600);
+  showToast('⚔️ ¡Bienvenido de vuelta, '+( state.heroName||'Héroe')+'!');
+}
+
+async function doSignup(){
+  const email=document.getElementById('authEmail').value.trim();
+  const pass=document.getElementById('authPass').value;
+  if(!email||!pass){_setAuthMsg('Completá el email y la contraseña.');return;}
+  if(pass.length<6){_setAuthMsg('La contraseña debe tener al menos 6 caracteres.');return;}
+  _setAuthBusy(true);_setAuthMsg('Creando tu cuenta...',true);
+  const {error}=await _sb.auth.signUp({email,password:pass});
+  if(error){_setAuthBusy(false);_setAuthMsg('Error: '+error.message);return;}
+  _setAuthBusy(false);
+  _setAuthMsg('✅ ¡Cuenta creada! Revisá tu email para confirmar y luego iniciá sesión.',true);
+}
+
+/* ── Cloud save / load ───────────────────────────────────── */
+async function saveStateToCloud(){
   try{
-    const r=localStorage.getItem('rpg_vida_v6');
-    if(r) return Object.assign(defaultState(),JSON.parse(r));
-    // migrate v5
-    const r5=localStorage.getItem('rpg_vida_v5');
-    if(r5){const o=Object.assign(defaultState(),JSON.parse(r5));o.heroClass=null;return o;}
-    // migrate v4
-    const r4=localStorage.getItem('rpg_vida_v4');
-    if(r4){const o=Object.assign(defaultState(),JSON.parse(r4));return o;}
-  }catch(e){}
-  return defaultState();
+    const {data:{user}}=await _sb.auth.getUser();
+    if(!user)return;
+    const {data:existing}=await _sb.from('heroes').select('id').eq('user_id',user.id).single();
+    if(existing){
+      await _sb.from('heroes').update({state,updated_at:new Date().toISOString()}).eq('user_id',user.id);
+    } else {
+      await _sb.from('heroes').insert({user_id:user.id,state});
+    }
+  } catch(e){ console.warn('[RPG] Cloud save error:',e); }
 }
-function saveState(){try{localStorage.setItem('rpg_vida_v6',JSON.stringify(state));}catch(e){}}
+
+async function loadStateFromCloud(){
+  try{
+    const {data:{user}}=await _sb.auth.getUser();
+    if(!user)return;
+    const {data}=await _sb.from('heroes').select('state').eq('user_id',user.id).single();
+    if(data?.state){
+      state=Object.assign(defaultState(),data.state);
+      // Also keep local backup
+      try{_idbPut(IDB_KEY,state).catch(()=>{});}catch(e){}
+    }
+  } catch(e){ console.warn('[RPG] Cloud load error:',e); }
+}
+
+/* ── Public API (mirrors old loadState / saveState) ─────── */
+let state = defaultState();   // will be overwritten by initDB()
+let selectedClass = null;
+
+// saveState is fire-and-forget — saves locally AND to cloud
+function saveState(){
+  if(_db){ _idbPut(IDB_KEY, state).catch(e => console.warn('[RPG] saveState error:', e)); }
+  saveStateToCloud();
+}
+
+// Called once at startup — returns a Promise that resolves when state is loaded
+async function initDB(){
+  try{
+    await _openDB();
+    let saved = await _idbGet(IDB_KEY);
+    if(!saved){
+      const migrated = _migrateFromLocalStorage();
+      if(migrated){
+        saved = migrated;
+        await _idbPut(IDB_KEY, saved);
+        _cleanLocalStorage();
+      }
+    }
+    if(saved){ state = Object.assign(defaultState(), saved); }
+  } catch(err){
+    console.warn('[RPG] IndexedDB unavailable, falling back to localStorage:', err);
+    const raw = localStorage.getItem('rpg_vida_v6');
+    if(raw){ try{ state = Object.assign(defaultState(), JSON.parse(raw)); }catch(e){} }
+    window._idbFallback = true;
+    saveState = function(){
+      try{ localStorage.setItem('rpg_vida_v6', JSON.stringify(state)); }catch(e){}
+      saveStateToCloud();
+    };
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════
    HELPERS
@@ -1235,6 +1555,7 @@ function checkNewDay(){
     if(!state.historyV2)state.historyV2=[];
     state.historyV2.push({date:state.lastDay,done:doneCnt,total:QUEST_DEFS.length});
     if(state.historyV2.length>30)state.historyV2=state.historyV2.slice(-30);
+    updateBestStreaks();
   }
   QUEST_DEFS.forEach(q=>{state.quests[q.id].done=false;});
   state.lastDay=t;
@@ -1246,7 +1567,7 @@ function checkNewDay(){
 ═══════════════════════════════════════════════════════════ */
 function render(){
   checkNewDay();
-  renderHeader();renderWeek();renderQuests();renderBoss();renderBonus();
+  renderHeader();renderWeek();renderQuests();renderBoss();renderDailyBoss();renderBonus();
   renderStats();renderDiary();renderInventory();renderLogros();
   renderPlanner();renderConfig();
   applyTheme(state.theme||'parchment');
@@ -1364,8 +1685,133 @@ function renderBoss(){
   el.appendChild(card);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   BOSS DIARIO
+═══════════════════════════════════════════════════════════ */
+const DAILY_BOSS_POOL=[
+  {id:'db1',ico:'⚡',name:'El Rayo Matutino',    desc:'Levantate y hacé 5 minutos de movimiento antes de revisar el celular.', xp:80},
+  {id:'db2',ico:'🧊',name:'La Prueba del Frío',  desc:'Terminá tu ducha con 30 segundos de agua fría. Sin excusas.', xp:90},
+  {id:'db3',ico:'📵',name:'El Silencio Digital', desc:'Una hora sin redes sociales ni noticias. Solo vos y tus pensamientos.', xp:85},
+  {id:'db4',ico:'🌬️',name:'El Aliento del Dragón',desc:'10 respiraciones profundas conscientes. Inhalar 4s, retener 4s, exhalar 6s.', xp:70},
+  {id:'db5',ico:'💬',name:'La Palabra Honesta',  desc:'Decile algo verdadero y amable a alguien hoy. Sin rodeos.', xp:80},
+  {id:'db6',ico:'🪞',name:'El Espejo del Héroe', desc:'Escribí 3 cosas en las que mejoraste este mes. Sin modestia falsa.', xp:75},
+  {id:'db7',ico:'🏃',name:'El Sprint del Alba',  desc:'5 minutos de actividad física intensa. Sentadillas, lagartijas, lo que sea.', xp:85},
+  {id:'db8',ico:'🍃',name:'El Té del Druida',    desc:'Tomá algo caliente sin pantallas. 5 minutos de pausa consciente.', xp:65},
+  {id:'db9',ico:'📞',name:'La Llamada Pendiente',desc:'Hay alguien a quien debés llamar. Hoy es el día.', xp:90},
+  {id:'db10',ico:'🎯',name:'El Dardo Certero',   desc:'Hacé UNA sola cosa importante antes del mediodía. Solo una.', xp:95},
+];
+
+function getDailyBossToday(){
+  const t=today();
+  if(state.dailyBoss?.date===t)return DAILY_BOSS_POOL.find(b=>b.id===state.dailyBoss.bossId)||DAILY_BOSS_POOL[0];
+  const idx=hash(t+'db')%DAILY_BOSS_POOL.length;
+  state.dailyBoss={date:t,bossId:DAILY_BOSS_POOL[idx].id,done:false};
+  saveState();
+  return DAILY_BOSS_POOL[idx];
+}
+
+function renderDailyBoss(){
+  const el=document.getElementById('dailyBossContainer');
+  if(!el)return;
+  el.innerHTML='';
+  // No mostrar si ya hay boss semanal (domingo)
+  if(isSunday())return;
+  const boss=getDailyBossToday();
+  const done=state.dailyBoss?.done;
+  const card=document.createElement('div');
+  card.className='daily-boss-card'+(done?' defeated':'');
+  card.innerHTML=`
+    <div class="dbc-header">
+      <div class="dbc-ico">${boss.ico}</div>
+      <div>
+        <div class="dbc-title">${done?'✓ DESAFÍO SUPERADO':'⚡ DESAFÍO DEL DÍA'}</div>
+        <div class="dbc-name">${boss.name}</div>
+      </div>
+    </div>
+    <div class="dbc-desc">${boss.desc}</div>
+    <button class="dbc-btn" onclick="defeatDailyBoss(${boss.xp})" ${done?'disabled':''}>
+      ${done?'✓ COMPLETADO':'⚡ MARCAR COMO HECHO'}
+    </button>
+    <div class="dbc-xp">${done?'Recompensa obtenida: +'+boss.xp+' XP':'Recompensa: +'+boss.xp+' XP'}</div>`;
+  el.appendChild(card);
+}
+
+function defeatDailyBoss(xp){
+  if(state.dailyBoss?.done)return;
+  state.dailyBoss.done=true;
+  state.dailyBossDefeated=(state.dailyBossDefeated||0)+1;
+  const wasLvl=getLvl(state.xp);
+  state.xp+=xp;
+  const newLvl=getLvl(state.xp);
+  saveState();render();vibrate([50,30,50]);
+  if(newLvl>wasLvl)setTimeout(()=>showLevelUp(newLvl),350);
+  else showToast(`⚡ ¡Desafío superado! +${xp} XP`);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EXPORT / IMPORT
+═══════════════════════════════════════════════════════════ */
+function exportData(){
+  const data=JSON.stringify(state,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fecha=today().replace(/-/g,'');
+  a.href=url;a.download=`rpg_vida_heroe_${fecha}.json`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('💾 Progreso exportado correctamente');
+}
+
+function importData(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(typeof imported.xp==='undefined'||typeof imported.level==='undefined'){
+        showToast('❌ Archivo inválido. No es un save de RPG Vida.');return;
+      }
+      showModal(`<div style="text-align:center;padding:10px 0">
+        <div style="font-size:40px;margin-bottom:10px">📂</div>
+        <div class="modal-title">IMPORTAR PROGRESO</div>
+        <div style="font-size:12px;color:var(--t-muted);font-style:italic;line-height:1.8;margin-bottom:16px">
+          Se encontró un save de <strong style="color:var(--gold)">${imported.heroName||'Héroe'}</strong><br>
+          Nivel ${imported.level||1} · ${imported.xp||0} XP<br><br>
+          ¿Reemplazar el progreso actual?
+        </div>
+        <button onclick="confirmImport()" style="width:100%;padding:10px;background:var(--gold);color:var(--t-hdr1);font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;border:none;border-radius:9px;cursor:pointer;margin-bottom:6px">✓ SÍ, IMPORTAR</button>
+        <button class="modal-close" onclick="closeModal()">CANCELAR</button>
+      </div>`);
+      window._importedState=imported;
+    }catch(err){showToast('❌ Error al leer el archivo');}
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+function confirmImport(){
+  if(!window._importedState)return;
+  state=Object.assign(defaultState(),window._importedState);
+  saveState();closeModal();render();
+  showToast('✓ Progreso importado. ¡Bienvenido de vuelta, '+state.heroName+'!');
+  window._importedState=null;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BEST STREAKS TRACKING
+═══════════════════════════════════════════════════════════ */
+function updateBestStreaks(){
+  if(!state.bestStreaks)state.bestStreaks={};
+  ATTRS.forEach(a=>{
+    const streaks=QUEST_DEFS.filter(q=>q.cat===a.id).map(q=>state.streaks?.[q.id]||0);
+    const cur=streaks.length?Math.round(streaks.reduce((s,v)=>s+v,0)/streaks.length):0;
+    if(cur>(state.bestStreaks[a.id]||0))state.bestStreaks[a.id]=cur;
+  });
+}
+
 function defeatBoss(wk,xp){
-  if((state.bossHistory||{})[wk])return;
   if(!state.bossHistory)state.bossHistory={};
   state.bossHistory[wk]=true;
   state.bossDefeated=(state.bossDefeated||0)+1;
@@ -1420,66 +1866,170 @@ function toggleBonus(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   STATS
+   STATS — FASE 2
 ═══════════════════════════════════════════════════════════ */
 function renderStats(){
-  const grid=document.getElementById('statGrid');grid.innerHTML='';
-  ATTRS.forEach((a,idx)=>{
-    const cq=QUEST_DEFS.filter(q=>q.cat===a.id);
-    const tot=cq.length;
-    const dn=cq.filter(q=>state.quests[q.id]?.done).length;
-    const pct=tot?Math.round(dn/tot*100):0;
-    const avgL=tot?Math.round(cq.reduce((s,q)=>s+getQLevel(q.id),0)/tot):0;
-    const ln=['Básico','Aprendiz','Avanzado','Experto','Maestro'];
-    const c=document.createElement('div');c.className='stat-card';
-    c.style.animationDelay=(idx*.08)+'s';
-    c.innerHTML=`<div class="stat-ico">${a.icon}</div>
-      <div class="stat-v" style="color:${a.color}">${pct}%</div>
-      <div class="stat-n">${a.name} · ${ln[avgL]}</div>
-      <div class="stat-bar"><div class="stat-bar-f" style="width:${pct}%;background:${a.color}"></div></div>`;
-    grid.appendChild(c);
-  });
-  renderChart();renderSummary();
+  renderRadar();
+  renderAttrStreaks();
+  renderHeatmap();
+  renderSummary();
 }
 
-function renderChart(){
-  const svg=document.getElementById('chartSvg');svg.innerHTML='';
+/* --- RADAR CHART --- */
+function renderRadar(){
+  const svg=document.getElementById('radarSvg');
+  const leg=document.getElementById('radarLegend');
+  if(!svg)return;
+  svg.innerHTML='';leg.innerHTML='';
+
+  const W=280,H=220,cx=140,cy=115,R=80;
+  const attrs=ATTRS;
+  const N=attrs.length; // 4
+  const angles=attrs.map((_,i)=>((i/N)*Math.PI*2)-Math.PI/2);
+
+  // XP acumulada por categoría (de historyV2 + quests actuales)
+  const xpByCat={};
+  attrs.forEach(a=>{xpByCat[a.id]=0;});
+  QUEST_DEFS.forEach(q=>{
+    const lvl=getQLevel(q.id);
+    const done=state.quests[q.id]?.done?1:0;
+    xpByCat[q.cat]=(xpByCat[q.cat]||0)+(q.xpBase+lvl*10)*done;
+    // racha bonus como proxy de consistencia
+    xpByCat[q.cat]+=(state.streaks?.[q.id]||0)*5;
+  });
+  const maxXP=Math.max(...Object.values(xpByCat),1);
+  const vals=attrs.map(a=>Math.min(1,(xpByCat[a.id]||0)/maxXP));
+
+  // Grid concéntrico (3 anillos)
+  [0.33,0.66,1].forEach(r=>{
+    const pts=angles.map(a=>`${cx+Math.cos(a)*R*r},${cy+Math.sin(a)*R*r}`).join(' ');
+    const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    poly.setAttribute('points',pts);
+    poly.setAttribute('fill','none');
+    poly.setAttribute('stroke','currentColor');
+    poly.setAttribute('stroke-width','0.5');
+    poly.setAttribute('opacity','0.15');
+    svg.appendChild(poly);
+  });
+
+  // Ejes
+  angles.forEach((a,i)=>{
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',cx);line.setAttribute('y1',cy);
+    line.setAttribute('x2',cx+Math.cos(a)*R);line.setAttribute('y2',cy+Math.sin(a)*R);
+    line.setAttribute('stroke','currentColor');line.setAttribute('stroke-width','0.5');line.setAttribute('opacity','0.2');
+    svg.appendChild(line);
+  });
+
+  // Polígono de datos
+  const dataPts=angles.map((a,i)=>{
+    const v=vals[i];
+    return `${cx+Math.cos(a)*R*v},${cy+Math.sin(a)*R*v}`;
+  }).join(' ');
+  const fill=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  fill.setAttribute('points',dataPts);
+  fill.setAttribute('fill',attrs[0].color);fill.setAttribute('fill-opacity','0.18');
+  fill.setAttribute('stroke',attrs[0].color);fill.setAttribute('stroke-width','2');
+  fill.setAttribute('stroke-opacity','0.85');
+  // Animación de aparición
+  fill.style.transformOrigin=`${cx}px ${cy}px`;
+  fill.style.transform='scale(0)';
+  fill.style.transition='transform .6s cubic-bezier(.34,1.56,.64,1)';
+  svg.appendChild(fill);
+  setTimeout(()=>{fill.style.transform='scale(1)';},80);
+
+  // Puntos en vértices
+  angles.forEach((a,i)=>{
+    const v=vals[i];
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',cx+Math.cos(a)*R*v);
+    dot.setAttribute('cy',cy+Math.sin(a)*R*v);
+    dot.setAttribute('r','4');
+    dot.setAttribute('fill',attrs[i].color);
+    dot.setAttribute('stroke','var(--t-card)');dot.setAttribute('stroke-width','1.5');
+    svg.appendChild(dot);
+  });
+
+  // Etiquetas
+  angles.forEach((a,i)=>{
+    const attr=attrs[i];
+    const lx=cx+Math.cos(a)*(R+18);
+    const ly=cy+Math.sin(a)*(R+18);
+    const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',lx);txt.setAttribute('y',ly);
+    txt.setAttribute('text-anchor','middle');txt.setAttribute('dominant-baseline','central');
+    txt.setAttribute('font-size','11');txt.setAttribute('font-family','Cinzel,serif');
+    txt.setAttribute('fill',attr.color);txt.setAttribute('font-weight','600');
+    txt.textContent=attr.icon+' '+attr.name;
+    svg.appendChild(txt);
+    // Leyenda
+    const li=document.createElement('div');li.className='radar-leg-item';
+    li.innerHTML=`<div class="radar-leg-dot" style="background:${attr.color}"></div>${attr.name}: ${Math.round(vals[i]*100)}%`;
+    leg.appendChild(li);
+  });
+}
+
+/* --- HEATMAP --- */
+function renderHeatmap(){
+  const grid=document.getElementById('heatmapGrid');
+  if(!grid)return;
+  grid.innerHTML='';
   const hist=state.historyV2||[];
-  const W=360,H=90,padX=4,topPad=8;
-  if(!hist.length){
-    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-    t.setAttribute('x','180');t.setAttribute('y','50');t.setAttribute('text-anchor','middle');
-    t.setAttribute('font-size','11');t.setAttribute('fill','currentColor');t.setAttribute('opacity','.4');
-    t.setAttribute('font-style','italic');t.textContent='Sin datos aún. ¡Completá tus primeras misiones!';
-    svg.appendChild(t);return;
+  // Construir mapa date→data
+  const map={};
+  hist.forEach(d=>{map[d.date]=d;});
+
+  // Últimos 35 días (5 semanas completas)
+  const cells=[];
+  for(let i=34;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=dk(d);
+    cells.push({key,d,data:map[key]||null,isToday:i===0});
   }
-  const n=hist.length;
-  const bw=Math.max(4,Math.floor((W-padX*2)/n)-1.5);
-  // Draw bars
-  hist.forEach((d,i)=>{
-    const pct=d.total>0?d.done/d.total:0;
-    const bh=Math.max(2,Math.round(pct*(H-topPad-10)));
-    const x=padX+i*((W-padX*2)/n);
-    const y=H-bh-10;
-    const color=pct>=1?'#4A9E3F':pct>=.5?'#C9922A':'#8B1A1A';
-    const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('x',x);rect.setAttribute('y',y);
-    rect.setAttribute('width',bw);rect.setAttribute('height',bh);
-    rect.setAttribute('rx','2');rect.setAttribute('fill',color);rect.setAttribute('opacity','.8');
-    // animate
-    rect.setAttribute('transform',`translate(0,${bh})`);
-    rect.setAttribute('transform-origin',`${x+bw/2} ${H}`);
-    svg.appendChild(rect);
-    setTimeout(()=>{rect.style.transition='transform .5s ease-out';rect.setAttribute('transform','translate(0,0)');},i*18);
-    if(i%7===0){
-      const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
-      lbl.setAttribute('x',x+bw/2);lbl.setAttribute('y',H-1);
-      lbl.setAttribute('text-anchor','middle');lbl.setAttribute('font-size','7');
-      lbl.setAttribute('fill','currentColor');lbl.setAttribute('opacity','.45');
-      const dd=new Date(d.date+'T00:00:00');
-      lbl.textContent=dd.getDate()+'/'+(dd.getMonth()+1);
-      svg.appendChild(lbl);
+
+  cells.forEach(({key,d,data,isToday})=>{
+    const cell=document.createElement('div');
+    cell.className='hm-cell';
+    if(isToday){
+      cell.style.background='var(--gold)';cell.style.opacity='1';
+      cell.style.boxShadow='0 0 6px var(--gold)80';
+    } else if(!data){
+      cell.classList.add('hm-empty');
+    } else {
+      const pct=data.total>0?data.done/data.total:0;
+      if(pct===0)cell.classList.add('hm-0');
+      else if(pct<0.5)cell.classList.add('hm-1');
+      else if(pct<1)cell.classList.add('hm-2');
+      else cell.classList.add('hm-full');
     }
+    const mes=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const tip=isToday?'Hoy':(data?`${d.getDate()} ${mes[d.getMonth()]}: ${data.done}/${data.total} misiones`:`${d.getDate()} ${mes[d.getMonth()]}: sin datos`);
+    cell.title=tip;
+    grid.appendChild(cell);
+  });
+}
+
+/* --- RACHAS POR ATRIBUTO --- */
+function renderAttrStreaks(){
+  const grid=document.getElementById('attrStreakGrid');
+  if(!grid)return;
+  grid.innerHTML='';
+  const streaksByAttr={cuerpo:[],mente:[],vinculo:[],proposito:[]};
+  QUEST_DEFS.forEach(q=>{
+    if(streaksByAttr[q.cat])streaksByAttr[q.cat].push(state.streaks?.[q.id]||0);
+  });
+  ATTRS.forEach(a=>{
+    const streaks=streaksByAttr[a.id]||[];
+    const cur=streaks.length?Math.round(streaks.reduce((s,v)=>s+v,0)/streaks.length):0;
+    const best=state.bestStreaks?.[a.id]||cur;
+    const card=document.createElement('div');
+    card.className='attr-streak-card';
+    card.style.setProperty('--asc',a.color);
+    card.innerHTML=`<div class="attr-streak-ico">${a.icon}</div>
+      <div class="attr-streak-val" style="color:${a.color}">${cur}</div>
+      <div class="attr-streak-lbl">${a.name}</div>
+      <div class="attr-streak-best">MEJOR: ${best} días</div>`;
+    grid.appendChild(card);
   });
 }
 
@@ -1493,6 +2043,7 @@ function renderSummary(){
     <div class="info-row"><span class="info-lbl">Días perfectos</span><span class="info-val" style="color:var(--gold)">${state.perfectDays} 👑</span></div>
     <div class="info-row"><span class="info-lbl">Racha actual</span><span class="info-val" style="color:#cc3030">${state.streak} 🔥</span></div>
     <div class="info-row"><span class="info-lbl">Bosses derrotados</span><span class="info-val">${state.bossDefeated||0} 🐉</span></div>
+    <div class="info-row"><span class="info-lbl">Boss diarios</span><span class="info-val">${state.dailyBossDefeated||0} ⚡</span></div>
     ${cls?`<div class="info-row"><span class="info-lbl">Clase</span><span class="info-val">${cls.ico} ${cls.name}</span></div>`:''}`;
   el.appendChild(info);
   const dark=document.createElement('div');dark.className='info-dark';
@@ -1502,6 +2053,7 @@ function renderSummary(){
     <div style="font-size:10px;color:var(--t-sub);font-style:italic;margin-top:4px;line-height:1.6">Cada 7 días completando una misión, su dificultad aumenta automáticamente.</div>`;
   el.appendChild(dark);
 }
+
 
 /* ═══════════════════════════════════════════════════════════
    DIARY
@@ -1609,21 +2161,58 @@ function useItem(id){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LOGROS
+   LOGROS CON PROGRESO
 ═══════════════════════════════════════════════════════════ */
+function getLogroProgress(l){
+  // Devuelve {cur, max} para mostrar barra de progreso
+  const s=state;
+  const m={
+    agua7:  {cur:s.streaks?.agua||0,     max:7},
+    cam7:   {cur:s.streaks?.caminar||0,  max:7},
+    leer14: {cur:s.streaks?.leer||0,     max:14},
+    med21:  {cur:s.streaks?.meditar||0,  max:21},
+    par14:  {cur:s.streaks?.pareja||0,   max:14},
+    meta30: {cur:s.streaks?.meta||0,     max:30},
+    sem1:   {cur:s.totalDaysWon,         max:7},
+    sem4:   {cur:s.totalDaysWon,         max:28},
+    lvl5:   {cur:s.level,                max:5},
+    allday: {cur:s.perfectDays,          max:1},
+    perf7:  {cur:s.perfectDays,          max:7},
+    boss1:  {cur:s.bossDefeated||0,      max:1},
+    boss5:  {cur:s.bossDefeated||0,      max:5},
+    diary7: {cur:(s.diary||[]).length,   max:7},
+    custom3:{cur:(s.customQuests||[]).length,max:3},
+  };
+  return m[l.id]||null;
+}
+
 function renderLogros(){
   const list=document.getElementById('logroList');list.innerHTML='';
   LOGROS.forEach(l=>{
     const ok=l.cond(state);
+    const prog=getLogroProgress(l);
+    const pct=prog?Math.min(100,Math.round(prog.cur/prog.max*100)):0;
     const c=document.createElement('div');
     c.className='logro-card'+(ok?' unlocked':'');
-    c.style.opacity=ok?'1':'0.45';
+    c.style.opacity=ok?'1':'0.6';
+    let progHtml='';
+    if(!ok&&prog){
+      progHtml=`<div class="logro-prog-bar" style="width:100%;margin-top:5px">
+        <div class="logro-prog-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="logro-prog-lbl">${prog.cur} / ${prog.max}</div>`;
+    }
     c.innerHTML=`<div class="logro-ico">${l.ico}</div>
-      <div><div class="logro-name">${l.name}</div><div class="logro-desc">${l.desc}</div></div>
+      <div style="flex:1;min-width:0">
+        <div class="logro-name">${l.name}</div>
+        <div class="logro-desc">${l.desc}</div>
+        ${progHtml}
+      </div>
       <div class="${ok?'logro-lock logro-ok':'logro-lock'}">${ok?'✓':'🔒'}</div>`;
     list.appendChild(c);
   });
 }
+
 function checkLogroRewards(){
   if(!state.earnedLogros)state.earnedLogros=[];
   LOGROS.forEach(l=>{
@@ -1747,6 +2336,15 @@ function setTheme(name,btn){
   state.theme=name;saveState();applyTheme(name);
   document.querySelectorAll('[data-th]').forEach(b=>b.classList.toggle('active',b.dataset.th===name));
 }
+async function logoutHero(){
+  await _sb.auth.signOut();
+  showToast('👋 Sesión cerrada. ¡Hasta la próxima, héroe!');
+  setTimeout(()=>{
+    state=defaultState();
+    showLoginModal();
+  },1200);
+}
+
 function confirmReset(){
   showModal(`<div style="text-align:center;padding:10px 0">
     <div style="font-size:40px;margin-bottom:10px">⚠️</div>
@@ -1758,7 +2356,9 @@ function confirmReset(){
 }
 function doReset(){
   state=defaultState();
-  ['rpg_vida_v6','rpg_vida_v5','rpg_vida_v4'].forEach(k=>localStorage.removeItem(k));
+  // Clear IndexedDB record (and any leftover localStorage)
+  if(_db) _idbDelete(IDB_KEY).catch(()=>{});
+  _cleanLocalStorage();
   saveState();closeModal();render();
   showClassSelect(false);
   showToast('Progreso reiniciado. ¡Nueva aventura!');
@@ -2107,10 +2707,6 @@ if(state.notifEnabled&&Notification.permission==='granted')scheduleNotifCheck();
 setTimeout(renderNotifStatus,200);
 
 
-// Show class select on first load
-if(!state.heroClass){
-  setTimeout(()=>showClassSelect(false),600);
-}
 
 /* ═══════════════════════════════════════════════════════════
    STARTUP
@@ -2149,9 +2745,27 @@ if(!state.heroClass){
 })();
 
 setDate();
-render();
-applyTheme(state.theme||'parchment');
-addAutoTheme();
+applyTheme('parchment'); // apply a default theme immediately while loading
+
+(async function startup(){
+  await initDB();   // load local state first (fast)
+
+  // Check if user is already logged in
+  const {data:{session}} = await _sb.auth.getSession();
+
+  if(session){
+    // Logged in → load from cloud (overrides local if cloud has data)
+    await loadStateFromCloud();
+    applyTheme(state.theme||'parchment');
+    addAutoTheme();
+    render();
+    if(!state.heroClass) setTimeout(()=>showClassSelect(false),600);
+  } else {
+    // Not logged in → show login modal
+    applyTheme(state.theme||'parchment');
+    showLoginModal();
+  }
+})();
 </script>
 </body>
 </html>
