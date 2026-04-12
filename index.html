@@ -565,6 +565,39 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
 .new-cq-row{display:flex;gap:8px;margin-bottom:8px;}
 
 /* ═══════════════════════════════════════════════════════════
+   XP HISTORY CHART
+═══════════════════════════════════════════════════════════ */
+.xp-chart-wrap{background:var(--t-card);border:1px solid var(--t-border);border-radius:12px;padding:13px 13px 10px;margin-bottom:13px;}
+.xp-chart-title{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:2px;color:var(--t-muted);text-transform:uppercase;margin-bottom:10px;}
+.xp-chart-bars{display:flex;align-items:flex-end;gap:3px;height:80px;overflow:hidden;}
+.xp-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;}
+.xp-bar-fill{width:100%;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--gold-light),var(--gold));transition:height .4s cubic-bezier(.4,0,.2,1);min-height:2px;}
+.xp-bar-fill.today-bar{background:linear-gradient(180deg,#90f080,var(--xp-green));}
+.xp-bar-lbl{font-size:7px;font-family:'Cinzel',serif;color:var(--t-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;}
+.xp-chart-stats{display:flex;justify-content:space-around;margin-top:10px;padding-top:10px;border-top:1px solid var(--t-border);}
+.xp-stat-item{text-align:center;}
+.xp-stat-val{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--gold);}
+.xp-stat-lbl{font-size:9px;color:var(--t-muted);font-family:'Cinzel',serif;letter-spacing:.5px;}
+
+/* ═══════════════════════════════════════════════════════════
+   STREAK SHIELD INDICATOR
+═══════════════════════════════════════════════════════════ */
+.shield-indicator{display:inline-flex;align-items:center;gap:3px;background:rgba(139,26,26,.15);border:1px solid var(--ruby);border-radius:10px;padding:2px 7px;margin-top:3px;animation:shieldPulse 2.5s ease-in-out infinite;}
+@keyframes shieldPulse{0%,100%{box-shadow:0 0 4px rgba(139,26,26,.3);}50%{box-shadow:0 0 10px rgba(139,26,26,.6);}}
+.shield-txt{font-family:'Cinzel',serif;font-size:8px;color:var(--ruby);letter-spacing:.5px;}
+
+/* ═══════════════════════════════════════════════════════════
+   CUSTOM QUEST REPEAT BADGE
+═══════════════════════════════════════════════════════════ */
+.cq-repeat{display:inline-flex;align-items:center;gap:3px;font-family:'Cinzel',serif;font-size:8px;padding:2px 6px;border-radius:8px;margin-top:3px;}
+.cq-repeat.daily{background:rgba(74,158,63,.15);color:var(--xp-green);border:1px solid var(--xp-green);}
+.cq-repeat.weekly{background:rgba(201,146,42,.15);color:var(--gold);border:1px solid var(--gold);}
+.cq-repeat.monthly{background:rgba(139,26,26,.12);color:var(--ruby);border:1px solid var(--ruby);}
+.cq-repeat-sel{display:flex;gap:6px;margin-bottom:8px;}
+.cq-rep-btn{flex:1;padding:7px 4px;border-radius:7px;border:1px solid var(--t-border);background:var(--t-inp);color:var(--t-muted);font-family:'Cinzel',serif;font-size:8px;letter-spacing:.5px;cursor:pointer;transition:all .2s;text-align:center;}
+.cq-rep-btn.sel{border-color:var(--gold);color:var(--gold);background:rgba(201,146,42,.1);}
+
+/* ═══════════════════════════════════════════════════════════
    FOOTER NAV
 ═══════════════════════════════════════════════════════════ */
 .fnav{background:var(--t-fnav);display:flex;border-top:2px solid var(--gold);flex-shrink:0;}
@@ -950,6 +983,7 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
           <div class="streak-ico">🔥</div>
           <div class="streak-n" id="streakN">0</div>
           <div class="streak-lbl">RACHA</div>
+          <div id="shieldIndicator" style="display:none;" class="shield-indicator"><span>🛡️</span><span class="shield-txt">ACTIVO</span></div>
         </div>
       </div>
       <div class="sec-t">Esta semana</div>
@@ -968,6 +1002,12 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
 
     <!-- STATS -->
     <div class="content panel" id="panel-stats">
+      <div class="sec-t">XP Ganada — Últimos 30 días</div>
+      <div class="xp-chart-wrap">
+        <div class="xp-chart-title">HISTORIAL DE EXPERIENCIA</div>
+        <div class="xp-chart-bars" id="xpChartBars"></div>
+        <div class="xp-chart-stats" id="xpChartStats"></div>
+      </div>
       <div class="sec-t">Radar de Atributos</div>
       <div class="radar-wrap">
         <svg class="radar-svg" id="radarSvg" viewBox="0 0 280 220"></svg>
@@ -1037,6 +1077,12 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
         </div>
         <input class="cfg-inp" id="cqDesc" placeholder="Descripción..." style="margin-bottom:8px;">
         <input class="cfg-inp" id="cqXP" placeholder="XP (ej: 40)" type="number" style="margin-bottom:8px;">
+        <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--t-muted);letter-spacing:1px;margin-bottom:6px;">REPETICIÓN</div>
+        <div class="cq-repeat-sel" id="cqRepeatSel">
+          <button class="cq-rep-btn sel" data-rep="daily" onclick="selRepeat(this)">🌅 DIARIA</button>
+          <button class="cq-rep-btn" data-rep="weekly" onclick="selRepeat(this)">📅 SEMANAL</button>
+          <button class="cq-rep-btn" data-rep="monthly" onclick="selRepeat(this)">🗓️ MENSUAL</button>
+        </div>
         <button class="cfg-btn" onclick="addCustomQuest()">+ AGREGAR MISIÓN</button>
       </div>
     </div>
@@ -1268,7 +1314,8 @@ function defaultState(){
     historyV2:[],earnedLogros:[],
     weekPriorities:[],customQuests:[],
     notifEnabled:false,notifTime:'20:00',
-    dailyBoss:null,dailyBossDefeated:0,bestStreaks:{}};
+    dailyBoss:null,dailyBossDefeated:0,bestStreaks:{},
+    xpHistory:[]};  // [{date, xp}] last 30 days
 }
 
 /* ── IndexedDB layer ─────────────────────────────────────── */
@@ -1531,6 +1578,12 @@ function checkNewDay(){
   const allDone=QUEST_DEFS.every(q=>state.quests[q.id]?.done);
   const doneCnt=QUEST_DEFS.filter(q=>state.quests[q.id]?.done).length;
   if(state.lastDay){
+    // Calculate XP earned that day
+    const xpEarned=QUEST_DEFS.filter(q=>state.quests[q.id]?.done).reduce((s,q)=>s+getQXP(q,null),0);
+    if(!state.xpHistory)state.xpHistory=[];
+    state.xpHistory.push({date:state.lastDay,xp:xpEarned});
+    if(state.xpHistory.length>30)state.xpHistory=state.xpHistory.slice(-30);
+
     if(allDone){
       state.streak++;state.totalDaysWon++;state.perfectDays++;
       QUEST_DEFS.forEach(q=>{
@@ -1545,6 +1598,7 @@ function checkNewDay(){
       if(state.activeEffects?.totem||state.activeEffects?.shield){
         if(state.activeEffects.totem)state.activeEffects.totem=false;
         if(state.activeEffects.shield)state.activeEffects.shield=false;
+        showToast('🛡️ ¡Tu escudo protegió la racha!');
       } else {
         state.streak=0;
       }
@@ -1556,7 +1610,24 @@ function checkNewDay(){
     state.historyV2.push({date:state.lastDay,done:doneCnt,total:QUEST_DEFS.length});
     if(state.historyV2.length>30)state.historyV2=state.historyV2.slice(-30);
     updateBestStreaks();
+
+    // Reset weekly custom quests on Monday, monthly on 1st
+    const newDate=new Date(t);
+    if(newDate.getDay()===1){ // Monday
+      (state.customQuests||[]).forEach(cq=>{
+        if(cq.repeat==='weekly')state.quests['cq_'+cq.id]={done:false};
+      });
+    }
+    if(newDate.getDate()===1){ // 1st of month
+      (state.customQuests||[]).forEach(cq=>{
+        if(cq.repeat==='monthly')state.quests['cq_'+cq.id]={done:false};
+      });
+    }
   }
+  // Always reset daily custom quests
+  (state.customQuests||[]).forEach(cq=>{
+    if(!cq.repeat||cq.repeat==='daily')state.quests['cq_'+cq.id]={done:false};
+  });
   QUEST_DEFS.forEach(q=>{state.quests[q.id].done=false;});
   state.lastDay=t;
   saveState();
@@ -1590,6 +1661,12 @@ function renderHeader(){
   const cls=state.heroClass?CLASSES[state.heroClass]:null;
   document.getElementById('classIco').textContent=cls?cls.ico:'⚔️';
   document.getElementById('classTxt').textContent=cls?cls.name:'Aventurero';
+  // Shield indicator
+  const shieldEl=document.getElementById('shieldIndicator');
+  if(shieldEl){
+    const hasShield=state.activeEffects?.shield||state.activeEffects?.totem;
+    shieldEl.style.display=hasShield?'inline-flex':'none';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1869,10 +1946,56 @@ function toggleBonus(){
    STATS — FASE 2
 ═══════════════════════════════════════════════════════════ */
 function renderStats(){
+  renderXPChart();
   renderRadar();
   renderAttrStreaks();
   renderHeatmap();
   renderSummary();
+}
+
+/* --- XP HISTORY CHART --- */
+function renderXPChart(){
+  const bars=document.getElementById('xpChartBars');
+  const statsEl=document.getElementById('xpChartStats');
+  if(!bars)return;
+  bars.innerHTML='';statsEl.innerHTML='';
+  const hist=state.xpHistory||[];
+  // Build map of last 30 days
+  const days=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=dk(d);
+    const entry=hist.find(h=>h.date===key);
+    days.push({date:key,xp:entry?entry.xp:0,isToday:i===0});
+  }
+  const maxXP=Math.max(...days.map(d=>d.xp),1);
+  const totalXP=days.reduce((s,d)=>s+d.xp,0);
+  const activeDays=days.filter(d=>d.xp>0).length;
+  const avgXP=activeDays>0?Math.round(totalXP/activeDays):0;
+  const bestDay=days.reduce((best,d)=>d.xp>best.xp?d:best,{xp:0});
+  // Show only last 15 days for readability on mobile
+  const visible=days.slice(-15);
+  const shortDays=['D','L','M','X','J','V','S'];
+  visible.forEach(d=>{
+    const col=document.createElement('div');col.className='xp-bar-col';
+    const pct=Math.round((d.xp/maxXP)*100)||0;
+    const fill=document.createElement('div');
+    fill.className='xp-bar-fill'+(d.isToday?' today-bar':'');
+    fill.style.height=pct+'%';
+    fill.title=d.date+': '+d.xp+' XP';
+    const lbl=document.createElement('div');
+    lbl.className='xp-bar-lbl';
+    const dateObj=new Date(d.date+'T00:00:00');
+    lbl.textContent=shortDays[dateObj.getDay()];
+    col.appendChild(fill);col.appendChild(lbl);
+    bars.appendChild(col);
+  });
+  // Stats row
+  [{val:totalXP+' XP',lbl:'TOTAL MES'},{val:avgXP+' XP',lbl:'PROMEDIO'},{val:bestDay.xp+' XP',lbl:'MEJOR DÍA'}].forEach(s=>{
+    const el=document.createElement('div');el.className='xp-stat-item';
+    el.innerHTML=`<div class="xp-stat-val">${s.val}</div><div class="xp-stat-lbl">${s.lbl}</div>`;
+    statsEl.appendChild(el);
+  });
 }
 
 /* --- RADAR CHART --- */
@@ -2260,29 +2383,46 @@ function renderCustomQuestList(){
     el.innerHTML='<div style="font-size:12px;color:var(--t-muted);font-style:italic;padding:10px 0 4px;text-align:center;">Todavía no creaste misiones personalizadas.</div>';
     return;
   }
+  const repeatLabels={daily:'🌅 DIARIA',weekly:'📅 SEMANAL',monthly:'🗓️ MENSUAL'};
   cqs.forEach(cq=>{
+    const repeatType=cq.repeat||'daily';
     const d=document.createElement('div');d.className='cq-card';
     d.innerHTML=`<div class="cq-ico">${cq.ico||'🎯'}</div>
-      <div><div class="cq-name">${cq.name}</div><div class="cq-desc">${cq.desc||''} · ${cq.xp} XP</div></div>
+      <div style="flex:1;min-width:0">
+        <div class="cq-name">${cq.name}</div>
+        <div class="cq-desc">${cq.desc||''} · ${cq.xp} XP</div>
+        <div class="cq-repeat ${repeatType}">${repeatLabels[repeatType]||'🌅 DIARIA'}</div>
+      </div>
       <button class="cq-del" onclick="deleteCustomQuest('${cq.id}')">✕</button>`;
     el.appendChild(d);
   });
 }
+function selRepeat(btn){
+  document.querySelectorAll('.cq-rep-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
 function addCustomQuest(){
   const ico=document.getElementById('cqIco').value.trim()||'🎯';
   const name=document.getElementById('cqName').value.trim();
   const desc=document.getElementById('cqDesc').value.trim();
   const xp=parseInt(document.getElementById('cqXP').value)||30;
+  const repeatBtn=document.querySelector('.cq-rep-btn.sel');
+  const repeat=repeatBtn?repeatBtn.dataset.rep:'daily';
   if(!name){showToast('Escribí un nombre para la misión');return;}
   if(!state.customQuests)state.customQuests=[];
   const id='cq_'+Date.now();
-  state.customQuests.push({id,ico,name,desc,xp,cat:'proposito'});
+  state.customQuests.push({id,ico,name,desc,xp,cat:'proposito',repeat});
   if(!state.quests)state.quests={};
   state.quests['cq_'+id]={done:false,level:0,streak:0};
   document.getElementById('cqIco').value='';
   document.getElementById('cqName').value='';
   document.getElementById('cqDesc').value='';
   document.getElementById('cqXP').value='';
+  // Reset repeat selector to daily
+  document.querySelectorAll('.cq-rep-btn').forEach(b=>b.classList.remove('sel'));
+  const first=document.querySelector('.cq-rep-btn[data-rep="daily"]');
+  if(first)first.classList.add('sel');
   saveState();render();showToast('¡Misión creada! ✦');
 }
 function deleteCustomQuest(id){
