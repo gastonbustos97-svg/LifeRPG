@@ -6,7 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1410">
-<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;RPG Vida Real&quot;,&quot;short_name&quot;:&quot;RPG Vida&quot;,&quot;description&quot;:&quot;Convierte tus hábitos en una aventura RPG&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;orientation&quot;:&quot;portrait&quot;,&quot;background_color&quot;:&quot;#1a1410&quot;,&quot;theme_color&quot;:&quot;#C9922A&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231a1410'/><text y='.9em' font-size='90'>⚔️</text></svg>&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <title>RPG Vida Real ⚔️</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -972,7 +973,7 @@ body{font-family:'Crimson Pro',serif;display:flex;justify-content:center;align-i
 
     <!-- MISIONES -->
     <div class="content panel active" id="panel-misiones">
-      <div class="install-tip" id="installTip" style="display:none"><strong>📲 INSTALAR COMO APP</strong><br>Chrome: ⋮ → Añadir a pantalla inicio · Safari: compartir → Agregar a inicio</div>
+      <div class="install-tip" id="installTip" style="display:none"><strong>📲 INSTALAR EN iPhone/iPad</strong><br>Tocá el botón compartir ⬆ → "Agregar a pantalla de inicio" → "Agregar"</div>
       <div id="installBtnWrap"></div>
       <div class="day-ban">
         <div>
@@ -1315,7 +1316,7 @@ function defaultState(){
     weekPriorities:[],customQuests:[],
     notifEnabled:false,notifTime:'20:00',
     dailyBoss:null,dailyBossDefeated:0,bestStreaks:{},
-    xpHistory:[]};  // [{date, xp}] last 30 days
+    xpHistory:[],skippedToday:[],weekSkips:{}};  // [{date, xp}] last 30 days
 }
 
 /* ── IndexedDB layer ─────────────────────────────────────── */
@@ -1629,6 +1630,7 @@ function checkNewDay(){
     if(!cq.repeat||cq.repeat==='daily')state.quests['cq_'+cq.id]={done:false};
   });
   QUEST_DEFS.forEach(q=>{state.quests[q.id].done=false;});
+  state.skippedToday=[];
   state.lastDay=t;
   saveState();
 }
@@ -1693,7 +1695,19 @@ function renderWeek(){
 function renderQuests(){
   const list=document.getElementById('questList');list.innerHTML='';
   let done=0;const total=QUEST_DEFS.length+(state.customQuests?.length||0);
-  const allQuests=[...QUEST_DEFS,...(state.customQuests||[]).map(cq=>({...cq,isCustom:true}))];
+  const baseQuests=QUEST_DEFS.map(q=>({...q,isCustom:false}));
+  const customQuests=(state.customQuests||[]).map(cq=>({...cq,isCustom:true}));
+  // Orden inteligente: completadas al final, luego por racha activa (no perder racha), luego por XP
+  const sortedBase=[...baseQuests].sort((a,b)=>{
+    const doneA=state.quests[a.id]?.done?1:0;
+    const doneB=state.quests[b.id]?.done?1:0;
+    if(doneA!==doneB)return doneA-doneB;
+    const strA=state.streaks?.[a.id]||0;
+    const strB=state.streaks?.[b.id]||0;
+    if(strA!==strB)return strB-strA;
+    return getQXP(b,null)-getQXP(a,null);
+  });
+  const allQuests=[...sortedBase,...customQuests];
   allQuests.forEach((q,idx)=>{
     const isCustom=q.isCustom;
     const qs=isCustom?(state.quests['cq_'+q.id]||{done:false}):(state.quests[q.id]||{done:false});
@@ -1707,17 +1721,31 @@ function renderQuests(){
     c.className='qcard '+dc+(qs.done?' done':'');
     c.style.animationDelay=(idx*0.04)+'s';
     c.classList.add('entering');
+    const streak=!isCustom?(state.streaks?.[q.id]||0):0;
+    const skippedToday=!isCustom&&(state.skippedToday||[]).includes(q.id);
+    const streakBadge=streak>=2&&!qs.done&&!skippedToday?`<span style="font-size:8px;background:rgba(201,146,42,.15);color:var(--gold);border:1px solid rgba(201,146,42,.3);border-radius:4px;padding:1px 5px;margin-left:5px">🔥${streak}</span>`:'';
     c.innerHTML=`<div class="q-ico">${q.icon||q.ico}</div>
       <div class="q-info">
-        <div class="q-name">${nm}${pri?'<span style="color:var(--gold);font-size:9px;margin-left:5px">★</span>':''}</div>
-        <div class="q-det">${txt}</div>
+        <div class="q-name">${nm}${pri?'<span style="color:var(--gold);font-size:9px;margin-left:5px">★</span>':''}${streakBadge}</div>
+        <div class="q-det">${skippedToday?'<span style="color:var(--t-sub);font-style:italic">⏭️ Salteada hoy (racha protegida)</span>':txt}</div>
       </div>
-      <div class="q-xp">+${xp} XP</div>
-      <div class="chk">${qs.done?'✓':''}</div>`;
+      <div class="q-xp">${skippedToday?'—':'+'+xp+' XP'}</div>
+      <div class="chk">${qs.done?'✓':skippedToday?'⏭':''}
+      </div>`;
     c.setAttribute('role','button');
     c.setAttribute('aria-label',`${nm}: ${txt}. Vale ${xp} XP${qs.done?' - Completada':''}`);
+    // Long-press para saltear (500ms)
+    let pressTimer=null;
+    if(!isCustom&&!qs.done&&!skippedToday){
+      c.addEventListener('pointerdown',()=>{
+        pressTimer=setTimeout(()=>{pressTimer=null;showSkipMenu(q.id,nm,c);},500);
+      });
+      c.addEventListener('pointerup',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+      c.addEventListener('pointercancel',()=>{if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}});
+    }
     c.addEventListener('click',e=>{
-      if(!qs.done) spawnParticles(e);
+      if(pressTimer===null&&!isCustom&&!qs.done&&(state.skippedToday||[]).includes(q.id))return;
+      if(!qs.done&&!skippedToday) spawnParticles(e);
       addRipple(c,e);
       if(isCustom) toggleCustomQuest(q.id,xp,c);
       else toggleQuest(q.id,xp,c);
@@ -1729,6 +1757,22 @@ function renderQuests(){
   const maxLvl=Math.max(...QUEST_DEFS.map(q=>getQLevel(q.id)));
   const dn=['Iniciado','Aprendiz','Guerrero','Héroe','Leyenda'];
   document.getElementById('diffLabel').textContent='Dificultad: '+dn[maxLvl];
+  // Mostrar hint de skip si hay misiones con racha >= 3
+  const tieneRachas=QUEST_DEFS.some(q=>!state.quests[q.id]?.done&&(state.streaks?.[q.id]||0)>=3);
+  const skipsLeft=getSkipsLeft();
+  let hintEl=document.getElementById('skipHint');
+  if(tieneRachas&&skipsLeft>0){
+    if(!hintEl){
+      hintEl=document.createElement('div');
+      hintEl.id='skipHint';
+      hintEl.style.cssText='font-size:10px;color:var(--t-sub);font-style:italic;text-align:center;margin-bottom:8px;margin-top:-4px;';
+      const questList=document.getElementById('questList');
+      questList.parentNode.insertBefore(hintEl,questList);
+    }
+    hintEl.textContent=`Mantené presionado una misión con 🔥 racha para saltearla sin perderla (${skipsLeft} salto${skipsLeft===1?'':'s'} esta semana)`;
+  } else if(hintEl){
+    hintEl.remove();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2545,8 +2589,44 @@ function confirmClass(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   QUEST ACTIONS
+   SALTEAR MISIÓN (sin perder racha, máx 2/semana)
 ═══════════════════════════════════════════════════════════ */
+function getSkipsLeft(){
+  const wk=weekKey();
+  if(!state.weekSkips)state.weekSkips={};
+  const rec=state.weekSkips[wk]||{count:0};
+  return Math.max(0,2-rec.count);
+}
+function skipQuest(qid){
+  const wk=weekKey();
+  if(!state.weekSkips)state.weekSkips={};
+  if(!state.weekSkips[wk])state.weekSkips[wk]={count:0};
+  state.weekSkips[wk].count++;
+  if(!state.skippedToday)state.skippedToday=[];
+  if(!state.skippedToday.includes(qid))state.skippedToday.push(qid);
+  saveState();render();
+  const left=getSkipsLeft();
+  showToast(`⏭️ Misión salteada. Racha protegida. (${left} salto${left===1?'':'s'} restante${left===1?'':'s'} esta semana)`);
+}
+function showSkipMenu(qid,name,cardEl){
+  const left=getSkipsLeft();
+  if(left<=0){showToast('⚠️ Usaste tus 2 salteos de esta semana. ¡A completarla!');return;}
+  const q=QUEST_DEFS.find(q=>q.id===qid);
+  const streak=state.streaks?.[qid]||0;
+  showModal(`<div style="text-align:center;padding:6px 0">
+    <div style="font-size:34px;margin-bottom:8px">⏭️</div>
+    <div class="modal-title">SALTEAR MISIÓN</div>
+    <div style="font-size:12px;color:var(--t-muted);font-style:italic;line-height:1.9;margin:10px 0 16px">
+      <strong style="color:var(--t-txt)">${name}</strong><br>
+      ${streak>0?`Tu racha de <strong style="color:var(--gold)">${streak} días</strong> se mantiene.`:'Sin racha activa.'}<br>
+      Quedan <strong style="color:var(--gold)">${left}</strong> salteo${left===1?'':'s'} esta semana.
+    </div>
+    <button onclick="skipQuest('${qid}');closeModal()" style="width:100%;padding:10px;background:var(--gold);color:var(--t-hdr1);font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;border:none;border-radius:9px;cursor:pointer;margin-bottom:6px">⏭️ SÍ, SALTEAR HOY</button>
+    <button class="modal-close" onclick="closeModal()">CANCELAR</button>
+  </div>`);
+}
+
+
 function toggleQuest(qid,xp,cardEl){
   const qs=state.quests[qid];
   const wasLvl=getLvl(state.xp);
@@ -2560,13 +2640,135 @@ function toggleQuest(qid,xp,cardEl){
     qs.done=true;state.xp+=xp;vibrate();
     const newLvl=getLvl(state.xp);
     saveState();render();
-    if(newLvl>wasLvl)setTimeout(()=>showLevelUp(newLvl),350);
+    if(newLvl>wasLvl){setTimeout(()=>showLevelUp(newLvl),350);}
+    else{
+      // Verificar si se completaron TODAS las misiones
+      const allMainDone=QUEST_DEFS.every(q=>state.quests[q.id]?.done);
+      if(allMainDone)setTimeout(()=>showVictoryScreen(),400);
+    }
   }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   LEVEL UP
+   PANTALLA DE VICTORIA DEL DÍA
 ═══════════════════════════════════════════════════════════ */
+function showVictoryScreen(){
+  vibrate([60,30,60,30,100]);
+  // Calcular XP ganada hoy
+  const xpHoy=QUEST_DEFS.filter(q=>state.quests[q.id]?.done).reduce((s,q)=>s+getQXP(q,null),0);
+  // Calcular atributos mejorados hoy
+  const attrHtml=ATTRS.map(a=>{
+    const qs=QUEST_DEFS.filter(q=>q.cat===a.id&&state.quests[q.id]?.done);
+    if(!qs.length)return'';
+    return`<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:11px;color:var(--t-muted)">
+      <span>${a.icon}</span><span style="color:var(--t-txt)">${a.name}</span>
+      <span style="color:var(--xp-green);font-size:10px">+${qs.reduce((s,q)=>s+getQXP(q,null),0)} XP</span>
+    </div>`;
+  }).join('');
+  const streakMsg=state.streak>=7?`🔥 ¡Racha de ${state.streak} días! Sos imparable.`:
+    state.streak>=3?`🔥 ${state.streak} días seguidos. ¡Seguí así!`:
+    `✨ Día completado.`;
+  const FRASES=[
+    'El héroe no espera inspiración. La crea.',
+    'Cada misión cumplida es una victoria real.',
+    'Los hábitos son el destino hecho rutina.',
+    'Hoy ganaste. Mañana, ganás de nuevo.',
+    'El reino se forja un día a la vez.',
+    'Disciplina es elegirte a vos mismo.',
+  ];
+  const frase=FRASES[Math.floor(Math.random()*FRASES.length)];
+  const now=new Date();
+  const hora=now.getHours();
+  const esNoche=hora>=20||hora<5;
+  const botonExtra=esNoche
+    ?`<button onclick="closeModal();setTimeout(()=>showNightReview(),200)" style="width:100%;padding:9px;background:transparent;border:1px solid var(--t-border);color:var(--t-txt);font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;border-radius:9px;cursor:pointer;margin-bottom:8px">🌙 REVISIÓN NOCTURNA</button>`
+    :'';
+  showModal(`<div style="text-align:center;padding:8px 0">
+    <div style="font-size:50px;margin-bottom:4px;animation:breathe 1.5s ease-in-out infinite">🏆</div>
+    <div style="font-family:'Cinzel',serif;color:var(--gold-light);font-size:17px;font-weight:700;letter-spacing:1px;margin-bottom:4px">¡DÍA CONQUISTADO!</div>
+    <div style="font-size:11px;color:var(--t-sub);font-style:italic;margin-bottom:14px">${streakMsg}</div>
+    <div style="background:var(--t-stat);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold)">${xpHoy > 0 ? '+'+xpHoy : ''} XP</div>
+      <div style="font-size:9px;color:var(--t-sub);font-family:'Cinzel',serif;letter-spacing:1px;margin-top:2px">GANADOS HOY</div>
+      <div style="margin-top:10px;text-align:left">${attrHtml}</div>
+    </div>
+    <div style="font-size:11px;color:var(--t-muted);font-style:italic;line-height:1.8;margin-bottom:16px">« ${frase} »</div>
+    ${botonExtra}
+    <button class="modal-close" onclick="closeModal()">CONTINUAR LA AVENTURA</button>
+  </div>`);
+  // Confetti de partículas
+  for(let i=0;i<8;i++){
+    setTimeout(()=>{
+      const fakeEvent={clientX:window.innerWidth/2+((Math.random()-.5)*180),clientY:200};
+      spawnParticles(fakeEvent);
+    },i*120);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REVISIÓN NOCTURNA GUIADA
+═══════════════════════════════════════════════════════════ */
+function showNightReview(){
+  // Encontrar la misión con racha más larga (candidata a subir de nivel)
+  const conRacha=QUEST_DEFS.filter(q=>state.quests[q.id]?.done)
+    .map(q=>({q,streak:state.streaks?.[q.id]||0,ql:getQLevel(q.id)}))
+    .filter(x=>x.streak>=5&&x.ql<4)
+    .sort((a,b)=>b.streak-a.streak);
+  const sugerencia=conRacha[0];
+  const sugerenciaHtml=sugerencia?`
+    <div style="background:rgba(201,146,42,.1);border:1px solid rgba(201,146,42,.3);border-radius:9px;padding:10px;margin-bottom:12px;text-align:left">
+      <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold);letter-spacing:1px;margin-bottom:4px">💡 SUGERENCIA</div>
+      <div style="font-size:11px;color:var(--t-txt);line-height:1.7"><strong>${sugerencia.q.name}</strong> lleva ${sugerencia.streak} días seguidos. ¿La subís al siguiente nivel?</div>
+      <button onclick="subirNivelMision('${sugerencia.q.id}');closeModal()" style="width:100%;margin-top:8px;padding:7px;background:var(--gold);color:var(--t-hdr1);font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;border:none;border-radius:7px;cursor:pointer">⬆️ SUBIR NIVEL DE MISIÓN</button>
+    </div>`:'';
+  // Misión más difícil del día (hard que se completó)
+  const hardDone=QUEST_DEFS.filter(q=>state.quests[q.id]?.done&&getDiffClass(q)==='hard');
+  const difficultHtml=hardDone.length?`<div style="font-size:11px;color:var(--t-muted);margin-bottom:12px;text-align:left;font-style:italic">💪 Misión difícil superada: <strong style="color:var(--t-txt)">${hardDone[0].name}</strong>. Eso tiene mérito.</div>`:'';
+  showModal(`<div style="text-align:center;padding:6px 0">
+    <div style="font-size:36px;margin-bottom:6px">🌙</div>
+    <div class="modal-title">REVISIÓN NOCTURNA</div>
+    <div style="font-size:11px;color:var(--t-sub);font-style:italic;margin:6px 0 14px">Antes de cerrar el día, un momento de reflexión.</div>
+    ${difficultHtml}
+    ${sugerenciaHtml}
+    <div style="text-align:left;margin-bottom:10px">
+      <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--t-muted);letter-spacing:1px;margin-bottom:6px">¿QUÉ FUE MÁS DIFÍCIL HOY?</div>
+      <textarea id="nightReviewTa" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--t-border);background:var(--t-inp);color:var(--t-txt);font-family:'Crimson Pro',serif;font-size:14px;resize:none;height:70px;outline:none" placeholder="Una sola cosa, en pocas palabras..."></textarea>
+    </div>
+    <button onclick="saveNightReview()" style="width:100%;padding:10px;background:var(--t-hdr2);border:1.5px solid var(--gold);color:var(--t-hdr-name);font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;border-radius:9px;cursor:pointer;margin-bottom:8px">📜 GUARDAR Y CERRAR EL DÍA</button>
+    <button class="modal-close" onclick="closeModal()">SALTAR</button>
+  </div>`);
+}
+
+function saveNightReview(){
+  const text=document.getElementById('nightReviewTa')?.value?.trim();
+  if(text){
+    if(!state.diary)state.diary=[];
+    const idx=state.diary.findIndex(e=>e.date===today());
+    if(idx>=0){
+      state.diary[idx].nightNote=text;
+    } else {
+      state.diary.push({date:today(),mood:'🌙',text:'',nightNote:text});
+    }
+    if(state.diary.length>30)state.diary=state.diary.slice(-30);
+    saveState();
+  }
+  closeModal();
+  showToast('🌙 Noche registrada. ¡Buen descanso, héroe!');
+}
+
+function subirNivelMision(qid){
+  const qs=state.quests[qid];
+  if(!qs)return;
+  const curLvl=qs.level||0;
+  if(curLvl>=4){showToast('Esta misión ya está al máximo nivel.');return;}
+  qs.level=curLvl+1;
+  qs.streak=0;
+  saveState();render();
+  const q=QUEST_DEFS.find(q=>q.id===qid);
+  showToast(`⬆️ ${q?.name} subió al nivel ${qs.level+1}. ¡El desafío crece!`);
+}
+
+
 function showLevelUp(lvl){
   const nm=LEVEL_NAMES[Math.min(lvl-1,LEVEL_NAMES.length-1)];
   showModal(`<div class="lvlup">
@@ -2709,8 +2911,17 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 /* ═══════════════════════════════════════════════════════════
-   PWA: INSTALL PROMPT
+   PWA: SERVICE WORKER + INSTALL PROMPT
 ═══════════════════════════════════════════════════════════ */
+// Registrar Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg=>console.log('[RPG] SW registrado:', reg.scope))
+      .catch(err=>console.warn('[RPG] SW error:', err));
+  });
+}
+
 let deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{
   e.preventDefault();
@@ -2718,11 +2929,12 @@ window.addEventListener('beforeinstallprompt',e=>{
   const wrap=document.getElementById('installBtnWrap');
   if(wrap){
     wrap.innerHTML=`<button onclick="triggerInstall()" style="
-      width:100%;margin-bottom:13px;padding:11px;
+      width:100%;margin-bottom:13px;padding:13px;
       background:linear-gradient(135deg,var(--t-banner1),var(--t-banner2));
       color:var(--t-hdr-name);font-family:'Cinzel',serif;font-size:10px;
-      letter-spacing:1.5px;border:1.5px solid var(--gold);border-radius:10px;
-      cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;
+      letter-spacing:1.5px;border:2px solid var(--gold);border-radius:12px;
+      cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;
+      box-shadow:0 0 16px rgba(201,146,42,.25);
     ">📲 INSTALAR COMO APP EN TU DISPOSITIVO</button>`;
   }
   const tip=document.getElementById('installTip');
@@ -2742,8 +2954,8 @@ function triggerInstall(){
     const wrap=document.getElementById('installBtnWrap');if(wrap)wrap.innerHTML='';
   });
 }
-// Show tip on Safari / non-Chrome that can't auto-prompt
-if(!/Chrome/.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches){
+// Mostrar tip en Safari (no puede auto-prompt)
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.matchMedia('(display-mode: standalone)').matches){
   setTimeout(()=>{const tip=document.getElementById('installTip');if(tip)tip.style.display='block';},800);
 }
 
